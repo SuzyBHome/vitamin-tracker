@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Supplements">
+  <meta name="theme-color" content="#6C5CE7">
+  <title>Daily Supplements</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <style>
+    /* ── TOKENS ─────────────────────────────────── */
+    :root {
+      --bg:        #F0EDE8;
+      --card:      #FFFFFF;
+      --text:      #1C1C1E;
+      --text2:     #6B6B70;
+      --text3:     #AEAEB2;
+      --border:    #E5E3DF;
+      --safe-t:    env(safe-area-inset-top, 0px);
+      --safe-b:    env(safe-area-inset-bottom, 0px);
+      --nav-h:     64px;
+
+      /* sections */
+      --m-accent:  #E8962A;
+      --m-bg:      #FBF4E6;
+      --m-card:    #FEF8ED;
+      --m-ring:    #F4A435;
+
+      --l-accent:  #3DAA72;
+      --l-bg:      #EBF7F1;
+      --l-card:    #F1FAF5;
+      --l-ring:    #4CAF82;
+
+      --d-accent:  #6C5CE7;
+      --d-bg:      #EEF0FD;
+      --d-card:    #F4F2FE;
+      --d-ring:    #7B6EF6;
+
+      --b-accent:  #3A4E8C;
+      --b-bg:      #EAECF4;
+      --b-card:    #EEF0F8;
+      --b-ring:    #4A5FAD;
+
+      --fab:       #6C5CE7;
+      --streak:    #F4A435;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); overflow: hidden; }
+
+    /* ── LAYOUT ─────────────────────────────────── */
+    #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+    .scroll-area {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding-bottom: calc(var(--nav-h) + var(--safe-b) + 16px);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── HEADER ─────────────────────────────────── */
+    .app-header {
+      background: var(--bg);
+      padding: calc(var(--safe-t) + 14px) 20px 12px;
+      flex-shrink: 0;
+    }
+    .header-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+    .header-titles h1 {
+      font-size: 26px; font-weight: 800; letter-spacing: -0.8px; line-height: 1.1;
+    }
+    .header-titles p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+    .streak-badge {
+      display: flex; flex-direction: column; align-items: center;
+      background: white; border-radius: 14px; padding: 8px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      min-width: 64px;
+    }
+    .streak-top { display: flex; align-items: center; gap: 4px; }
+    .streak-top .fire { font-size: 18px; }
+    .streak-num { font-size: 18px; font-weight: 800; color: var(--streak); }
+    .streak-lbl { font-size: 10px; color: var(--text2); font-weight: 600; margin-top: 1px; white-space: nowrap; }
+
+    .date-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: white; border-radius: 14px; padding: 8px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .date-nav-btn {
+      background: none; border: none; width: 32px; height: 32px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: var(--text2); cursor: pointer;
+    }
+    .date-nav-btn:active { background: var(--border); }
+    .date-center { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .date-cal { font-size: 16px; }
+    .date-text { font-size: 15px; font-weight: 700; }
+    .date-caret { font-size: 11px; color: var(--text3); }
+    .today-pill {
+      background: var(--d-ring); color: white;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 8px; cursor: pointer;
+    }
+
+    /* ── SECTION CARDS (Today tab) ──────────────── */
+    .sec-card {
+      margin: 10px 14px 0;
+      background: var(--card);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .sec-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .sec-head.morning { background: linear-gradient(135deg, #FFFDF5, #FEF3D0); }
+    .sec-head.lunch   { background: linear-gradient(135deg, #F2FCF7, #DCF5E7); }
+    .sec-head.dinner  { background: linear-gradient(135deg, #F6F4FF, #EAE5FD); }
+    .sec-head.bedtime { background: linear-gradient(135deg, #EFF1FA, #DDE3F3); }
+
+    .sec-icon {
+      width: 46px; height: 46px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .sec-icon.morning { background: #F9CE74; }
+    .sec-icon.lunch   { background: #7ACFA0; }
+    .sec-icon.dinner  { background: #A89AF8; }
+    .sec-icon.bedtime { background: #6D80C0; }
+
+    .sec-meta { flex: 1; min-width: 0; }
+    .sec-name { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
+    .sec-sub  { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .sec-head.morning .sec-name { color: #8A5A0A; }
+    .sec-head.lunch   .sec-name { color: #1F6B45; }
+    .sec-head.dinner  .sec-name { color: #3D2E9E; }
+    .sec-head.bedtime .sec-name { color: #1E2E6E; }
+
+    /* donut ring */
+    .ring-wrap { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+    .ring-svg { width: 44px; height: 44px; transform: rotate(-90deg); }
+    .ring-track { fill: none; stroke: rgba(0,0,0,0.08); stroke-width: 3.5; }
+    .ring-fill  { fill: none; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dasharray 0.4s ease; }
+    .ring-fill.morning { stroke: var(--m-ring); }
+    .ring-fill.lunch   { stroke: var(--l-ring); }
+    .ring-fill.dinner  { stroke: var(--d-ring); }
+    .ring-fill.bedtime { stroke: var(--b-ring); }
+    .ring-label {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; letter-spacing: -0.3px;
+    }
+    .ring-label.morning { color: var(--m-accent); }
+    .ring-label.lunch   { color: var(--l-accent); }
+    .ring-label.dinner  { color: var(--d-accent); }
+    .ring-label.bedtime { color: var(--b-accent); }
+
+    .collapse-btn {
+      background: none; border: none; font-size: 18px; color: var(--text3);
+      cursor: pointer; transition: transform 0.25s ease; line-height: 1;
+      padding: 4px; flex-shrink: 0;
+    }
+    .collapse-btn.open { transform: rotate(180deg); }
+
+    /* ── SECTION BODY ───────────────────────────── */
+    .sec-body { overflow: hidden; transition: max-height 0.35s cubic-bezier(.4,0,.2,1); }
+    .sec-body.collapsed { max-height: 0 !important; }
+
+    .subsec-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text3);
+      padding: 12px 16px 6px;
+    }
+    .subsec-label:first-child { padding-top: 14px; }
+
+    .vit-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; padding: 0 12px 4px;
+    }
+
+    .vit-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 12px;
+      background: #FAFAFA;
+      border-radius: 13px;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.15s, background 0.2s, border-color 0.2s;
+      text-align: left; outline: none;
+      -webkit-appearance: none;
+    }
+    .vit-card:active { transform: scale(0.96); }
+
+    .vit-card.taken.morning { background: var(--m-card); border-color: #F4D08A; }
+    .vit-card.taken.lunch   { background: var(--l-card); border-color: #9AD4B7; }
+    .vit-card.taken.dinner  { background: var(--d-card); border-color: #B4ACFA; }
+    .vit-card.taken.bedtime { background: var(--b-card); border-color: #9AAAD6; }
+
+    .vit-circle {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .vit-circle.morning { border: 2px solid #E8B860; }
+    .vit-circle.lunch   { border: 2px solid #5DBB8C; }
+    .vit-circle.dinner  { border: 2px solid #8A7DF8; }
+    .vit-circle.bedtime { border: 2px solid #5A6EB0; }
+
+    .vit-card.taken .vit-circle.morning { background: var(--m-ring); border-color: var(--m-ring); }
+    .vit-card.taken .vit-circle.lunch   { background: var(--l-ring); border-color: var(--l-ring); }
+    .vit-card.taken .vit-circle.dinner  { background: var(--d-ring); border-color: var(--d-ring); }
+    .vit-card.taken .vit-circle.bedtime { background: var(--b-ring); border-color: var(--b-ring); }
+
+    .vit-check { display: none; }
+    .vit-card.taken .vit-check { display: block; }
+    .vit-card.taken .vit-empty { display: none; }
+
+    .vit-text { flex: 1; min-width: 0; }
+    .vit-name { font-size: 13px; font-weight: 700; line-height: 1.2; display: block; }
+    .vit-dose { font-size: 11px; color: var(--text2); margin-top: 1px; display: block; }
+
+    .vit-card.taken .vit-name.morning { color: #8A5A0A; }
+    .vit-card.taken .vit-name.lunch   { color: #1F6B45; }
+    .vit-card.taken .vit-name.dinner  { color: #3D2E9E; }
+    .vit-card.taken .vit-name.bedtime { color: #1E2E6E; }
+
+    @keyframes popIn { 0%{transform:scale(1)} 45%{transform:scale(1.08)} 100%{transform:scale(1)} }
+    .vit-card.popping { animation: popIn 0.2s ease; }
+
+    .add-inline-btn {
+      margin: 10px 12px 14px;
+      width: calc(100% - 24px);
+      padding: 12px;
+      background: none;
+      border: 1.5px dashed var(--border);
+      border-radius: 13px;
+      font-size: 13px; font-weight: 600; color: var(--text3);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .add-inline-btn:hover { border-color: var(--d-ring); color: var(--d-ring); }
+    .add-inline-btn:active { transform: scale(0.98); }
+
+    /* ── BOTTOM NAV ─────────────────────────────── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: calc(var(--nav-h) + var(--safe-b));
+      padding-bottom: var(--safe-b);
+      background: white;
+      display: flex; align-items: center;
+      box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -4px 20px rgba(0,0,0,0.06);
+      z-index: 100;
+    }
+    .nav-btn-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 8px 0; }
+    .nav-btn-wrap svg { width: 22px; height: 22px; }
+    .nav-btn-wrap span { font-size: 10px; font-weight: 600; color: var(--text3); }
+    .nav-btn-wrap.active span { color: var(--fab); }
+    .nav-btn-wrap.active svg { stroke: var(--fab); }
+    .nav-btn-wrap svg { stroke: var(--text3); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-fab-wrap { flex: 1; display: flex; justify-content: center; }
+    .nav-fab {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, #7C6EF8, #5A4DD6);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(108,92,231,0.45);
+      transition: transform 0.2s;
+    }
+    .nav-fab:active { transform: scale(0.92); }
+    .nav-fab svg { stroke: white; width: 22px; height: 22px; stroke-width: 2.2; }
+
+    /* ── TABS ───────────────────────────────────── */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── SYMPTOMS TAB ───────────────────────────── */
+    .sym-header {
+      padding: 16px 14px 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .sym-header h2 { font-size: 20px; font-weight: 800; }
+    .sym-new-btn {
+      background: var(--fab);
+      color: white; border: none; border-radius: 20px;
+      padding: 8px 16px; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+    .sym-new-btn:active { transform: scale(0.96); }
+
+    .sym-compose {
+      margin: 0 14px 10px;
+      background: white; border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+    .sym-compose-head {
+      padding: 14px 16px 0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .sym-compose-date { font-size: 12px; font-weight: 700; color: var(--text2); }
+    .sym-compose-cancel { background: none; border: none; font-size: 13px; color: var(--text3); cursor: pointer; font-family: inherit; }
+    .sym-textarea {
+      width: 100%; border: none; outline: none; resize: none;
+      padding: 10px 16px 12px;
+      font-size: 15px; font-family: inherit; color: var(--text);
+      min-height: 100px; background: transparent;
+      line-height: 1.5;
+    }
+    .sym-textarea::placeholder { color: var(--text3); }
+    .sym-compose-footer {
+      padding: 0 12px 12px;
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .sym-save-btn {
+      background: var(--fab); color: white; border: none;
+      border-radius: 12px; padding: 10px 20px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      font-family: inherit;
+    }
+    .sym-save-btn:active { transform: scale(0.96); }
+
+    .sym-empty {
+      margin: 40px 14px; text-align: center;
+      color: var(--text3);
+    }
+    .sym-empty .sym-empty-icon { font-size: 40px; margin-bottom: 10px; }
+    .sym-empty p { font-size: 14px; font-weight: 500; }
+
+    .sym-entry {
+      margin: 8px 14px 0;
+      background: white; border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .sym-entry-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .sym-entry-date { font-size: 12px; font-weight: 700; color: var(--text2); }
+    .sym-entry-del {
+      background: none; border: none; font-size: 13px;
+      color: var(--text3); cursor: pointer; padding: 2px 6px;
+      border-radius: 8px; font-family: inherit;
+    }
+    .sym-entry-del:active { background: #FFE5E5; color: #e53e3e; }
+    .sym-entry-text { font-size: 14px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+
+    /* ── SUPPLEMENTS MANAGEMENT TAB ─────────────── */
+    .mgmt-header { padding: 16px 14px 8px; }
+    .mgmt-header h2 { font-size: 20px; font-weight: 800; }
+    .mgmt-header p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+    .mgmt-sec {
+      margin: 10px 14px 0;
+      background: white; border-radius: 18px;
+      overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .mgmt-sec-head {
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .mgmt-sec-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .mgmt-sec-icon.morning { background: #F9CE74; }
+    .mgmt-sec-icon.lunch   { background: #7ACFA0; }
+    .mgmt-sec-icon.dinner  { background: #A89AF8; }
+    .mgmt-sec-icon.bedtime { background: #6D80C0; }
+    .mgmt-sec-title { font-size: 15px; font-weight: 800; flex: 1; }
+    .mgmt-sec-sub   { font-size: 11px; color: var(--text2); }
+
+    .mgmt-item {
+      padding: 11px 16px;
+      display: flex; align-items: center; gap: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .mgmt-item-info { flex: 1; min-width: 0; }
+    .mgmt-item-name { font-size: 14px; font-weight: 600; }
+    .mgmt-item-dose { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .mgmt-item-sub  { font-size: 11px; color: var(--text3); margin-top: 1px; font-style: italic; }
+    .mgmt-del-btn {
+      background: #FFE5E5; border: none; color: #e53e3e;
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 15px; flex-shrink: 0;
+      font-weight: 700; line-height: 1;
+    }
+    .mgmt-del-btn:active { background: #FCCACA; }
+
+    .mgmt-add-btn {
+      margin: 10px 14px;
+      width: calc(100% - 28px);
+      padding: 14px;
+      background: white; border: 1.5px dashed var(--border);
+      border-radius: 14px; font-size: 14px; font-weight: 700;
+      color: var(--d-ring); cursor: pointer; font-family: inherit;
+    }
+    .mgmt-add-btn:active { transform: scale(0.98); }
+
+    /* ── MODALS ─────────────────────────────────── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 300;
+      align-items: flex-end; justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    .overlay.open { display: flex; }
+    @keyframes slideUp { from { transform: translateY(110%); } to { transform: translateY(0); } }
+    .sheet {
+      background: white; border-radius: 24px 24px 0 0;
+      padding: 0 0 calc(24px + var(--safe-b));
+      width: 100%; max-width: 540px;
+      animation: slideUp 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 12px auto 20px;
+    }
+    .sheet-body { padding: 0 20px; }
+    .sheet-title { font-size: 20px; font-weight: 800; margin-bottom: 18px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text2); margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 13px 14px;
+      border: 1.5px solid var(--border); border-radius: 13px;
+      font-size: 15px; font-family: inherit; color: var(--text);
+      background: #FAFAFA; outline: none;
+      transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--fab); background: white; }
+    .field textarea { resize: none; min-height: 90px; line-height: 1.5; }
+    .sheet-btns { display: flex; gap: 10px; margin-top: 18px; }
+    .btn { flex: 1; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: transform 0.15s; }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: linear-gradient(135deg,#7C6EF8,#5A4DD6); color: white; }
+    .btn-ghost   { background: var(--bg); color: var(--text); }
+
+    /* ── INSIGHTS TAB ───────────────────────────── */
+    .insights-header { padding: 16px 14px 8px; }
+    .insights-header h2 { font-size: 20px; font-weight: 800; }
+    .ins-stat-row { display: flex; gap: 10px; margin: 10px 14px 0; }
+    .ins-stat {
+      flex: 1; background: white; border-radius: 16px; padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center;
+    }
+    .ins-stat-val { font-size: 28px; font-weight: 800; }
+    .ins-stat-val.streak { color: var(--streak); }
+    .ins-stat-val.pct { color: var(--d-ring); }
+    .ins-stat-lbl { font-size: 11px; color: var(--text2); font-weight: 600; margin-top: 2px; }
+    .ins-week { margin: 10px 14px 0; background: white; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .ins-week h3 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+    .week-days { display: flex; gap: 6px; }
+    .week-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .week-day-lbl { font-size: 10px; font-weight: 700; color: var(--text3); }
+    .week-day-bar { width: 100%; border-radius: 6px; background: var(--border); overflow: hidden; height: 60px; display: flex; align-items: flex-end; }
+    .week-day-fill { width: 100%; border-radius: 6px; background: linear-gradient(to top, var(--d-ring), #A89AF8); transition: height 0.5s ease; }
+    .week-day-pct { font-size: 10px; color: var(--text2); font-weight: 600; }
+
+    /* ── FAB MENU ───────────────────────────────── */
+    .fab-menu-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.25);
+      backdrop-filter: blur(2px);
+    }
+    .fab-menu-overlay.open { display: block; }
+    .fab-menu {
+      position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 16px);
+      left: 50%; transform: translateX(-50%);
+      z-index: 210;
+      display: flex; flex-direction: column; gap: 10px; align-items: center;
+    }
+    .fab-choice {
+      background: white; border: none; border-radius: 20px;
+      padding: 13px 24px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit; color: var(--text);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      display: flex; align-items: center; gap: 10px;
+      white-space: nowrap;
+    }
+    .fab-choice:active { transform: scale(0.96); }
+    .fab-choice .chip { font-size: 20px; }
+
+    /* ── PHOTO CAPTURE ──────────────────────────── */
+    .photo-capture-area {
+      border: 2px dashed var(--border); border-radius: 13px;
+      min-height: 72px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; position: relative;
+      overflow: hidden; transition: border-color 0.2s; background: #FAFAFA;
+    }
+    .photo-capture-area:active { border-color: var(--fab); }
+    .photo-capture-area.has-photo { border: none; min-height: 0; }
+    .photo-empty-state { text-align: center; pointer-events: none; padding: 10px; }
+    .photo-empty-state .cam-icon { font-size: 24px; display: block; margin-bottom: 3px; }
+    .photo-empty-state span { font-size: 12px; font-weight: 600; color: var(--text2); }
+    .photo-thumb-sheet { width: 100%; max-height: 150px; object-fit: cover; border-radius: 11px; display: block; }
+    .photo-retake-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,0.55); color: white;
+      border: none; border-radius: 8px; padding: 5px 10px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+
+    /* ── MGMT EDIT ──────────────────────────────── */
+    .mgmt-item { display: flex; align-items: center; gap: 10px; }
+    .mgmt-item-info-wrap { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+    .mgmt-item-photo { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+    .mgmt-item-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .mgmt-edit-btn {
+      background: var(--border); border: none; color: var(--text2);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 13px; flex-shrink: 0;
+    }
+    .mgmt-edit-btn:active { background: #d0cec8; }
+
+    /* ── MISC ───────────────────────────────────── */
+    .empty-sym { padding: 40px 14px; text-align: center; color: var(--text3); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header" id="main-header">
+    <div class="header-top">
+      <div class="header-titles">
+        <h1>Daily Supplements</h1>
+        <p>Stay consistent. Feel your best.</p>
+      </div>
+      <div class="streak-badge">
+        <div class="streak-top">
+          <span class="fire">🔥</span>
+          <span class="streak-num" id="streak-num">0</span>
+        </div>
+        <div class="streak-lbl">Day streak</div>
+      </div>
+    </div>
+    <div class="date-row">
+      <button class="date-nav-btn" id="btn-prev">‹</button>
+      <div class="date-center" id="date-center">
+        <span class="date-cal">📅</span>
+        <span class="date-text" id="date-text">Today</span>
+        <span class="date-caret">▾</span>
+      </div>
+      <div id="today-pill" class="today-pill" style="display:none">Today</div>
+      <button class="date-nav-btn" id="btn-next">›</button>
+    </div>
+  </header>
+
+  <!-- SCROLL AREA -->
+  <div class="scroll-area" id="scroll-area">
+
+    <!-- TODAY TAB -->
+    <div class="tab-content active" id="tab-today">
+      <div id="sections-root"></div>
+    </div>
+
+    <!-- INSIGHTS TAB -->
+    <div class="tab-content" id="tab-insights">
+      <div class="insights-header"><h2>Your Progress</h2></div>
+      <div class="ins-stat-row">
+        <div class="ins-stat">
+          <div class="ins-stat-val streak" id="ins-streak">0</div>
+          <div class="ins-stat-lbl">Day Streak 🔥</div>
+        </div>
+        <div class="ins-stat">
+          <div class="ins-stat-val pct" id="ins-today-pct">0%</div>
+          <div class="ins-stat-lbl">Today</div>
+        </div>
+        <div class="ins-stat">
+          <div class="ins-stat-val pct" id="ins-week-pct">0%</div>
+          <div class="ins-stat-lbl">This Week</div>
+        </div>
+      </div>
+      <div class="ins-week">
+        <h3>Last 7 Days</h3>
+        <div class="week-days" id="week-days"></div>
+      </div>
+    </div>
+
+    <!-- SYMPTOMS TAB -->
+    <div class="tab-content" id="tab-symptoms">
+      <div class="sym-header">
+        <h2>Symptom Log</h2>
+        <button class="sym-new-btn" id="sym-new-btn">+ New Entry</button>
+      </div>
+      <div id="sym-list"></div>
+    </div>
+
+    <!-- SUPPLEMENTS MGMT TAB -->
+    <div class="tab-content" id="tab-supplements">
+      <div class="mgmt-header">
+        <h2>Manage Supplements</h2>
+        <p>Add or remove from your daily protocol</p>
+      </div>
+      <div id="mgmt-root"></div>
+      <button class="mgmt-add-btn" id="mgmt-add-global">+ Add Supplement</button>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <div class="nav-btn-wrap active" data-tab="today" id="nav-today">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <span>Today</span>
+    </div>
+    <div class="nav-btn-wrap" data-tab="insights" id="nav-insights">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Insights</span>
+    </div>
+    <div class="nav-fab-wrap">
+      <button class="nav-fab" id="nav-fab">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+    <div class="nav-btn-wrap" data-tab="symptoms" id="nav-symptoms">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      <span>Symptoms</span>
+    </div>
+    <div class="nav-btn-wrap" data-tab="supplements" id="nav-supplements">
+      <svg viewBox="0 0 24 24"><path d="M18.5 2.5a2.121 2.121 0 0 1 0 3L7 17.5 4 20l2.5-3 11.5-11.5a2.121 2.121 0 0 1 0-3z"/><line x1="15" y1="5" x2="19" y2="9"/></svg>
+      <span>Supplements</span>
+    </div>
+  </nav>
+
+  <!-- FAB MENU -->
+  <div class="fab-menu-overlay" id="fab-menu-overlay">
+    <div class="fab-menu" id="fab-menu">
+      <button class="fab-choice" id="fab-add-sup"><span class="chip">💊</span> Add Supplement</button>
+      <button class="fab-choice" id="fab-add-sym"><span class="chip">📝</span> Log Symptom</button>
+    </div>
+  </div>
+
+  <!-- ADD SUPPLEMENT SHEET -->
+  <div class="overlay" id="add-sup-overlay">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-body">
+        <div class="sheet-title" id="add-sheet-title">Add Supplement</div>
+        <div class="field">
+          <label>Photo <span style="font-size:11px;font-weight:500;color:var(--text3)">(optional)</span></label>
+          <div class="photo-capture-area" id="photo-area">
+            <div class="photo-empty-state" id="photo-empty-state">
+              <i class="cam-icon">📷</i>
+              <span>Tap to add a photo</span>
+            </div>
+            <img id="photo-preview-img" class="photo-thumb-sheet" style="display:none" src="" alt="">
+            <button class="photo-retake-btn" id="photo-retake-btn" style="display:none" type="button">↺ Retake</button>
+          </div>
+          <input type="file" id="photo-file-input" accept="image/*" capture="environment" style="display:none">
+        </div>
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="inp-name" placeholder="e.g. Vitamin C" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Dose / Brand (optional)</label>
+          <input type="text" id="inp-dose" placeholder="e.g. 1000mg or BioCeuticals" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Section</label>
+          <select id="sel-section"></select>
+        </div>
+        <div class="field">
+          <label>Timing</label>
+          <select id="sel-sub"></select>
+        </div>
+        <div class="sheet-btns">
+          <button class="btn btn-ghost" id="add-cancel">Cancel</button>
+          <button class="btn btn-primary" id="add-confirm">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG SYMPTOM SHEET -->
+  <div class="overlay" id="add-sym-overlay">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-body">
+        <div class="sheet-title">Log Symptom</div>
+        <div class="field">
+          <label>How are you feeling?</label>
+          <textarea id="sym-note-input" placeholder="Describe your symptoms, energy levels, mood, anything you want to track…"></textarea>
+        </div>
+        <div class="sheet-btns">
+          <button class="btn btn-ghost" id="sym-cancel">Cancel</button>
+          <button class="btn btn-primary" id="sym-confirm">Save Note</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════════
+//  DEFAULT DATA
+// ═══════════════════════════════════════════════════
+const DEFAULTS = {
+  sections: [
+    {
+      id:'morning', label:'Morning', subtitle:'Kickstart your day',
+      emoji:'☀️', cls:'morning',
+      subsections:[
+        { id:'empty-stomach', label:'Empty Stomach', vitamins:[
+          { id:'v1', name:'Glutathione', dose:'BioCeuticals' },
+          { id:'v2', name:'Iodine Spray', dose:'250 mcg' },
+        ]},
+        { id:'morning-drink', label:'Morning Drink', vitamins:[
+          { id:'v3', name:'Muscleze Energy', dose:'' },
+          { id:'v4', name:'Pure TMG', dose:'' },
+        ]},
+        { id:'with-breakfast', label:'With Breakfast', vitamins:[
+          { id:'v5', name:'MethylB', dose:'' },
+          { id:'v6', name:'Quercetin', dose:'' },
+          { id:'v7', name:'Lopotropic', dose:'' },
+          { id:'v8', name:'Milk Thistle', dose:'' },
+        ]},
+      ]
+    },
+    {
+      id:'lunch', label:'Lunch', subtitle:'Midday nourishment',
+      emoji:'🥗', cls:'lunch',
+      subsections:[
+        { id:'with-lunch', label:'With Lunch', vitamins:[
+          { id:'v9',  name:'Vitamin D3', dose:'10,000 IU' },
+          { id:'v10', name:'Fish Oil', dose:'' },
+        ]},
+      ]
+    },
+    {
+      id:'dinner', label:'Dinner', subtitle:'Evening support',
+      emoji:'🍽️', cls:'dinner',
+      subsections:[
+        { id:'with-dinner', label:'With Dinner', vitamins:[
+          { id:'v11', name:'PEA', dose:'' },
+          { id:'v12', name:'C-D-Glucarate', dose:'' },
+        ]},
+      ]
+    },
+    {
+      id:'bedtime', label:'Bedtime', subtitle:'Prepare & recharge',
+      emoji:'🌙', cls:'bedtime',
+      subsections:[
+        { id:'before-sleep', label:'Before Sleep', vitamins:[
+          { id:'v13', name:'Magnesium Glycinate', dose:'' },
+          { id:'v14', name:'Prometrium', dose:'' },
+          { id:'v15', name:'MethylB12', dose:'Chewable' },
+        ]},
+      ]
+    },
+  ],
+  taken: {},
+  symptoms: [],
+  collapsed: {},
+};
+
+// ═══════════════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════════════
+const KEY = 'supp-tracker-v2';
+let D = (() => {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      // forward-compat: ensure symptoms & collapsed exist
+      if (!p.symptoms) p.symptoms = [];
+      if (!p.collapsed) p.collapsed = {};
+      return p;
+    }
+  } catch(_){}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+})();
+const save = () => localStorage.setItem(KEY, JSON.stringify(D));
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+let curDate = new Date();
+let activeTab = 'today';
+
+// ═══════════════════════════════════════════════════
+//  DATE
+// ═══════════════════════════════════════════════════
+function dKey(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; }
+function isToday(d){ return dKey(d)===dKey(new Date()); }
+function fmtDateLabel(d){
+  const now=new Date(), yest=new Date(now), tom=new Date(now);
+  yest.setDate(now.getDate()-1); tom.setDate(now.getDate()+1);
+  if(dKey(d)===dKey(now)) return 'Today';
+  if(dKey(d)===dKey(yest)) return 'Yesterday';
+  if(dKey(d)===dKey(tom)) return 'Tomorrow';
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
+function fmtTimestamp(d){
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const h=d.getHours()%12||12, m=String(d.getMinutes()).padStart(2,'0'), ap=d.getHours()<12?'am':'pm';
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} · ${h}:${m}${ap}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  VITAMIN HELPERS
+// ═══════════════════════════════════════════════════
+function allVits(){ return D.sections.flatMap(s=>s.subsections.flatMap(sub=>sub.vitamins)); }
+function takenOn(k){ return D.taken[k]||[]; }
+function isTaken(id,k){ return takenOn(k).includes(id); }
+function toggle(id){
+  const k=dKey(curDate);
+  if(!D.taken[k]) D.taken[k]=[];
+  const i=D.taken[k].indexOf(id);
+  if(i>=0) D.taken[k].splice(i,1); else D.taken[k].push(id);
+  save();
+}
+
+// ═══════════════════════════════════════════════════
+//  STREAK
+// ═══════════════════════════════════════════════════
+function calcStreak(){
+  const all=allVits(); if(!all.length) return 0;
+  const threshold=Math.ceil(all.length*0.5);
+  let streak=0, d=new Date(); d.setDate(d.getDate()-1);
+  for(let i=0;i<365;i++){
+    const k=dKey(d);
+    const tc=(D.taken[k]||[]).filter(id=>all.some(v=>v.id===id)).length;
+    if(tc>=threshold) streak++;
+    else break;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+
+// ═══════════════════════════════════════════════════
+//  RING SVG
+// ═══════════════════════════════════════════════════
+const R=15, CIRC=2*Math.PI*R;
+function ringDash(taken,total){ if(!total) return `0 ${CIRC}`; return `${CIRC*(taken/total)} ${CIRC}`; }
+
+// ═══════════════════════════════════════════════════
+//  RENDER TODAY
+// ═══════════════════════════════════════════════════
+function renderToday(){
+  const k=dKey(curDate);
+  const root=document.getElementById('sections-root');
+  root.innerHTML='';
+
+  for(const sec of D.sections){
+    const secVits=sec.subsections.flatMap(s=>s.vitamins);
+    const secTaken=secVits.filter(v=>isTaken(v.id,k)).length;
+    const isOpen=!D.collapsed[sec.id];
+    const dash=ringDash(secTaken,secVits.length);
+
+    const card=el('div','sec-card');
+    card.innerHTML=`
+      <div class="sec-head ${sec.cls}" data-sec="${sec.id}">
+        <div class="sec-icon ${sec.cls}">${sec.emoji}</div>
+        <div class="sec-meta">
+          <div class="sec-name">${esc(sec.label)}</div>
+          <div class="sec-sub">${esc(sec.subtitle)}</div>
+        </div>
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 36 36">
+            <circle class="ring-track" cx="18" cy="18" r="${R}"/>
+            <circle class="ring-fill ${sec.cls}" cx="18" cy="18" r="${R}"
+              stroke-dasharray="${dash}" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-label ${sec.cls}">${secTaken}/${secVits.length}</div>
+        </div>
+        <button class="collapse-btn ${isOpen?'open':''}" aria-label="Toggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      </div>
+      <div class="sec-body${isOpen?'':' collapsed'}" data-body="${sec.id}"></div>
+    `;
+    root.appendChild(card);
+
+    const body=card.querySelector('.sec-body');
+    // measure natural height
+    body.style.maxHeight='none';
+    for(const sub of sec.subsections){
+      const labelEl=el('div','subsec-label'); labelEl.textContent=sub.label;
+      body.appendChild(labelEl);
+      const grid=el('div','vit-grid');
+      for(const v of sub.vitamins){
+        const taken=isTaken(v.id,k);
+        const btn=el('button',`vit-card${taken?' taken':''} ${sec.cls}`);
+        btn.dataset.id=v.id; btn.type='button';
+        btn.innerHTML=`
+          <div class="vit-circle ${sec.cls}">
+            <svg class="vit-check" width="11" height="11" viewBox="0 0 11 11" fill="none">
+              <path d="M1.5 5.5L4.5 8.5L9.5 2.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="vit-text">
+            <span class="vit-name ${sec.cls}">${esc(v.name)}</span>
+            ${v.dose?`<span class="vit-dose">${esc(v.dose)}</span>`:''}
+          </div>
+        `;
+        grid.appendChild(btn);
+      }
+      body.appendChild(grid);
+    }
+    // inline add button
+    const addBtn=el('button','add-inline-btn');
+    addBtn.type='button'; addBtn.textContent='+ Add Supplement';
+    addBtn.dataset.addsec=sec.id;
+    body.appendChild(addBtn);
+
+    const h=body.scrollHeight;
+    if(!isOpen){ body.style.maxHeight='0px'; } else { body.style.maxHeight=h+'px'; }
+  }
+
+  updateHeaderDate();
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER INSIGHTS
+// ═══════════════════════════════════════════════════
+function renderInsights(){
+  const streak=calcStreak();
+  document.getElementById('ins-streak').textContent=streak;
+  document.getElementById('streak-num').textContent=streak;
+
+  const all=allVits();
+  const todayPct=all.length?Math.round((takenOn(dKey(new Date())).filter(id=>all.some(v=>v.id===id)).length/all.length)*100):0;
+  document.getElementById('ins-today-pct').textContent=todayPct+'%';
+
+  // week
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const k=dKey(d);
+    const tc=(D.taken[k]||[]).filter(id=>all.some(v=>v.id===id)).length;
+    const pct=all.length?Math.round(tc/all.length*100):0;
+    const DAYNAMES=['S','M','T','W','T','F','S'];
+    days.push({lbl:DAYNAMES[d.getDay()], pct});
+  }
+  const weekAvg=Math.round(days.reduce((a,d)=>a+d.pct,0)/days.length);
+  document.getElementById('ins-week-pct').textContent=weekAvg+'%';
+
+  const weekEl=document.getElementById('week-days');
+  weekEl.innerHTML=days.map(d=>`
+    <div class="week-day">
+      <div class="week-day-lbl">${d.lbl}</div>
+      <div class="week-day-bar">
+        <div class="week-day-fill" style="height:${d.pct}%"></div>
+      </div>
+      <div class="week-day-pct">${d.pct}%</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER SYMPTOMS
+// ═══════════════════════════════════════════════════
+function renderSymptoms(){
+  const list=document.getElementById('sym-list');
+  list.innerHTML='';
+  if(!D.symptoms.length){
+    list.innerHTML=`<div class="sym-empty"><div class="sym-empty-icon">📋</div><p>No entries yet. Tap "+ New Entry" to start logging.</p></div>`;
+    return;
+  }
+  for(const sym of D.symptoms){
+    const d=new Date(sym.ts);
+    const card=el('div','sym-entry');
+    card.innerHTML=`
+      <div class="sym-entry-head">
+        <span class="sym-entry-date">${fmtTimestamp(d)}</span>
+        <button class="sym-entry-del" data-del="${sym.id}">✕ Delete</button>
+      </div>
+      <div class="sym-entry-text">${esc(sym.note)}</div>
+    `;
+    list.appendChild(card);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER MANAGEMENT
+// ═══════════════════════════════════════════════════
+function renderMgmt(){
+  const root=document.getElementById('mgmt-root');
+  root.innerHTML='';
+  for(const sec of D.sections){
+    const block=el('div','mgmt-sec');
+    block.innerHTML=`
+      <div class="mgmt-sec-head">
+        <div class="mgmt-sec-icon ${sec.cls}">${sec.emoji}</div>
+        <div>
+          <div class="mgmt-sec-title">${esc(sec.label)}</div>
+          <div class="mgmt-sec-sub">${esc(sec.subtitle)}</div>
+        </div>
+      </div>
+    `;
+    for(const sub of sec.subsections){
+      for(const v of sub.vitamins){
+        const item=el('div','mgmt-item');
+        const photoHtml=photos[v.id]?`<img class="mgmt-item-photo" src="${esc(photos[v.id])}" alt="">`:'';
+        item.innerHTML=`
+          <div class="mgmt-item-info-wrap">
+            ${photoHtml}
+            <div class="mgmt-item-info">
+              <div class="mgmt-item-name">${esc(v.name)}</div>
+              ${v.dose?`<div class="mgmt-item-dose">${esc(v.dose)}</div>`:''}
+              <div class="mgmt-item-sub">${esc(sub.label)}</div>
+            </div>
+          </div>
+          <div class="mgmt-item-actions">
+            <button class="mgmt-edit-btn" data-vid="${v.id}" title="Edit">✎</button>
+            <button class="mgmt-del-btn" data-vid="${v.id}" title="Remove">×</button>
+          </div>
+        `;
+        block.appendChild(item);
+      }
+    }
+    root.appendChild(block);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  HEADER DATE
+// ═══════════════════════════════════════════════════
+function updateHeaderDate(){
+  document.getElementById('date-text').textContent=fmtDateLabel(curDate);
+  document.getElementById('today-pill').style.display=isToday(curDate)?'none':'block';
+  document.getElementById('streak-num').textContent=calcStreak();
+}
+
+// ═══════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════
+function switchTab(tab){
+  activeTab=tab;
+  // Show/hide header
+  document.getElementById('main-header').style.display=tab==='today'?'':'none';
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn-wrap').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  const navEl=document.getElementById('nav-'+tab);
+  if(navEl) navEl.classList.add('active');
+
+  if(tab==='insights') renderInsights();
+  if(tab==='symptoms') renderSymptoms();
+  if(tab==='supplements') renderMgmt();
+}
+
+// ═══════════════════════════════════════════════════
+//  EVENTS — nav
+// ═══════════════════════════════════════════════════
+document.querySelectorAll('.nav-btn-wrap[data-tab]').forEach(btn=>{
+  btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+});
+document.getElementById('btn-prev').addEventListener('click',()=>{
+  curDate=new Date(curDate); curDate.setDate(curDate.getDate()-1);
+  renderToday();
+});
+document.getElementById('btn-next').addEventListener('click',()=>{
+  curDate=new Date(curDate); curDate.setDate(curDate.getDate()+1);
+  renderToday();
+});
+document.getElementById('today-pill').addEventListener('click',()=>{ curDate=new Date(); renderToday(); });
+
+// ═══════════════════════════════════════════════════
+//  EVENTS — section toggle / vitamin tap
+// ═══════════════════════════════════════════════════
+document.getElementById('sections-root').addEventListener('click',e=>{
+  // Add inline
+  const addBtn=e.target.closest('.add-inline-btn');
+  if(addBtn){ prefillAddModal(addBtn.dataset.addsec,null); openSheet('add-sup-overlay'); return; }
+
+  // Collapse header
+  const secHead=e.target.closest('.sec-head[data-sec]');
+  if(secHead){
+    const id=secHead.dataset.sec;
+    D.collapsed[id]=!D.collapsed[id]; save();
+    const btn=secHead.querySelector('.collapse-btn');
+    const body=document.querySelector(`.sec-body[data-body="${id}"]`);
+    if(D.collapsed[id]){
+      body.style.maxHeight=body.scrollHeight+'px';
+      requestAnimationFrame(()=>{ body.style.maxHeight='0px'; });
+      btn.classList.remove('open');
+    } else {
+      body.style.maxHeight=body.scrollHeight+'px';
+      body.addEventListener('transitionend',()=>{ if(!D.collapsed[id]) body.style.maxHeight='none'; },{once:true});
+      btn.classList.add('open');
+    }
+    return;
+  }
+
+  // Vitamin toggle
+  const pill=e.target.closest('.vit-card');
+  if(pill){
+    const id=pill.dataset.id;
+    toggle(id);
+    const k=dKey(curDate);
+    const taken=isTaken(id,k);
+
+    // find section class
+    let secCls='';
+    for(const sec of D.sections){
+      if(sec.subsections.some(s=>s.vitamins.some(v=>v.id===id))){ secCls=sec.cls; break; }
+    }
+    pill.classList.toggle('taken',taken);
+    pill.classList.add('popping');
+    pill.addEventListener('animationend',()=>pill.classList.remove('popping'),{once:true});
+
+    // update ring
+    const secId=D.sections.find(s=>s.subsections.some(sub=>sub.vitamins.some(v=>v.id===id)))?.id;
+    if(secId) updateRing(secId);
+  }
+});
+
+function updateRing(secId){
+  const k=dKey(curDate);
+  const sec=D.sections.find(s=>s.id===secId); if(!sec) return;
+  const secVits=sec.subsections.flatMap(s=>s.vitamins);
+  const tc=secVits.filter(v=>isTaken(v.id,k)).length;
+  const dash=ringDash(tc,secVits.length);
+  const ring=document.querySelector(`.sec-head[data-sec="${secId}"] .ring-fill`);
+  const lbl=document.querySelector(`.sec-head[data-sec="${secId}"] .ring-label`);
+  if(ring){ ring.setAttribute('stroke-dasharray',dash); }
+  if(lbl){ lbl.textContent=`${tc}/${secVits.length}`; }
+}
+
+// ═══════════════════════════════════════════════════
+//  EVENTS — symptoms tab
+// ═══════════════════════════════════════════════════
+document.getElementById('sym-new-btn').addEventListener('click',()=>openSheet('add-sym-overlay'));
+
+document.getElementById('sym-list').addEventListener('click',e=>{
+  const delBtn=e.target.closest('.sym-entry-del');
+  if(delBtn){
+    const id=delBtn.dataset.del;
+    D.symptoms=D.symptoms.filter(s=>s.id!==id);
+    save(); renderSymptoms();
+  }
+});
+
+// ═══════════════════════════════════════════════════
+//  EVENTS — management tab
+// ═══════════════════════════════════════════════════
+document.getElementById('mgmt-root').addEventListener('click',e=>{
+  const del=e.target.closest('.mgmt-del-btn');
+  if(del){
+    const vid=del.dataset.vid;
+    for(const sec of D.sections){
+      for(const sub of sec.subsections){
+        const i=sub.vitamins.findIndex(v=>v.id===vid);
+        if(i>=0){
+          sub.vitamins.splice(i,1);
+          for(const k in D.taken){ const ti=D.taken[k].indexOf(vid); if(ti>=0) D.taken[k].splice(ti,1); }
+          delete photos[vid]; savePhotos();
+          save(); renderMgmt(); renderToday(); return;
+        }
+      }
+    }
+  }
+  const editBtn=e.target.closest('.mgmt-edit-btn');
+  if(editBtn){
+    const vid=editBtn.dataset.vid;
+    for(const sec of D.sections){
+      for(const sub of sec.subsections){
+        const v=sub.vitamins.find(vit=>vit.id===vid);
+        if(v){ prefillAddModal(sec.id, sub.id, v); openSheet('add-sup-overlay'); return; }
+      }
+    }
+  }
+});
+document.getElementById('mgmt-add-global').addEventListener('click',()=>{ prefillAddModal(null,null); openSheet('add-sup-overlay'); });
+
+// ═══════════════════════════════════════════════════
+//  FAB
+// ═══════════════════════════════════════════════════
+let fabOpen=false;
+function toggleFabMenu(){ fabOpen=!fabOpen; document.getElementById('fab-menu-overlay').classList.toggle('open',fabOpen); }
+document.getElementById('nav-fab').addEventListener('click',toggleFabMenu);
+document.getElementById('fab-menu-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('fab-menu-overlay')) toggleFabMenu(); });
+document.getElementById('fab-add-sup').addEventListener('click',()=>{ toggleFabMenu(); prefillAddModal(null,null); openSheet('add-sup-overlay'); });
+document.getElementById('fab-add-sym').addEventListener('click',()=>{ toggleFabMenu(); openSheet('add-sym-overlay'); });
+
+// ═══════════════════════════════════════════════════
+//  PHOTO STORAGE
+// ═══════════════════════════════════════════════════
+const PHOTO_KEY='supp-photos-v1';
+let photos=(()=>{ try{ return JSON.parse(localStorage.getItem(PHOTO_KEY)||'{}'); }catch(_){ return {}; } })();
+function savePhotos(){ localStorage.setItem(PHOTO_KEY,JSON.stringify(photos)); }
+
+function resizeImage(file,maxW=480,q=0.7){
+  return new Promise(resolve=>{
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const r=Math.min(1,maxW/img.width);
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*r); c.height=Math.round(img.height*r);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg',q));
+    };
+    img.src=url;
+  });
+}
+
+document.getElementById('photo-area').addEventListener('click',e=>{
+  if(e.target.closest('.photo-retake-btn')){
+    resetPhotoUI(); return;
+  }
+  document.getElementById('photo-file-input').click();
+});
+
+document.getElementById('photo-file-input').addEventListener('change',async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const b64=await resizeImage(file);
+  pendingPhoto=b64;
+  const area=document.getElementById('photo-area');
+  const img=document.getElementById('photo-preview-img');
+  area.classList.add('has-photo');
+  img.src=b64; img.style.display='block';
+  document.getElementById('photo-empty-state').style.display='none';
+  document.getElementById('photo-retake-btn').style.display='block';
+});
+
+// ═══════════════════════════════════════════════════
+//  ADD SUPPLEMENT SHEET
+// ═══════════════════════════════════════════════════
+let editMode=false, editVitaminId=null, pendingPhoto=null;
+
+function resetPhotoUI(){
+  pendingPhoto=null;
+  const area=document.getElementById('photo-area');
+  const img=document.getElementById('photo-preview-img');
+  area.classList.remove('has-photo');
+  img.style.display='none'; img.src='';
+  document.getElementById('photo-empty-state').style.display='';
+  document.getElementById('photo-retake-btn').style.display='none';
+  document.getElementById('photo-file-input').value='';
+}
+
+function prefillAddModal(secId, subId, vitaminToEdit=null){
+  editMode=!!vitaminToEdit;
+  editVitaminId=vitaminToEdit?vitaminToEdit.id:null;
+  resetPhotoUI();
+  document.getElementById('add-sheet-title').textContent=editMode?'Edit Supplement':'Add Supplement';
+  document.getElementById('add-confirm').textContent=editMode?'Save':'Add';
+  const selSec=document.getElementById('sel-section');
+  selSec.innerHTML=D.sections.map(s=>`<option value="${s.id}">${s.emoji} ${s.label}</option>`).join('');
+  if(secId) selSec.value=secId;
+  refreshSubSel();
+  if(subId) document.getElementById('sel-sub').value=subId;
+  if(vitaminToEdit){
+    document.getElementById('inp-name').value=vitaminToEdit.name||'';
+    document.getElementById('inp-dose').value=vitaminToEdit.dose||'';
+    if(photos[vitaminToEdit.id]){
+      const area=document.getElementById('photo-area');
+      const img=document.getElementById('photo-preview-img');
+      area.classList.add('has-photo');
+      img.src=photos[vitaminToEdit.id]; img.style.display='block';
+      document.getElementById('photo-empty-state').style.display='none';
+      document.getElementById('photo-retake-btn').style.display='block';
+    }
+  } else {
+    document.getElementById('inp-name').value='';
+    document.getElementById('inp-dose').value='';
+  }
+}
+function refreshSubSel(){
+  const sec=D.sections.find(s=>s.id===document.getElementById('sel-section').value);
+  document.getElementById('sel-sub').innerHTML=(sec?.subsections||[]).map(s=>`<option value="${s.id}">${s.label}</option>`).join('');
+}
+document.getElementById('sel-section').addEventListener('change',refreshSubSel);
+document.getElementById('add-cancel').addEventListener('click',()=>{ resetPhotoUI(); closeSheet('add-sup-overlay'); });
+document.getElementById('add-confirm').addEventListener('click',()=>{
+  const name=(document.getElementById('inp-name').value||'').trim(); if(!name) return;
+  const dose=(document.getElementById('inp-dose').value||'').trim();
+  const secId=document.getElementById('sel-section').value;
+  const subId=document.getElementById('sel-sub').value;
+  const sec=D.sections.find(s=>s.id===secId); if(!sec) return;
+  const sub=sec.subsections.find(s=>s.id===subId); if(!sub) return;
+
+  if(editMode && editVitaminId){
+    let found=false;
+    for(const s of D.sections){
+      for(const su of s.subsections){
+        const idx=su.vitamins.findIndex(v=>v.id===editVitaminId);
+        if(idx>=0){
+          if(s.id===secId && su.id===subId){
+            su.vitamins[idx].name=name;
+            su.vitamins[idx].dose=dose;
+          } else {
+            const vit=su.vitamins.splice(idx,1)[0];
+            vit.name=name; vit.dose=dose;
+            sub.vitamins.push(vit);
+          }
+          found=true; break;
+        }
+      }
+      if(found) break;
+    }
+    if(pendingPhoto){ photos[editVitaminId]=pendingPhoto; savePhotos(); }
+  } else {
+    const newId='v'+Date.now();
+    sub.vitamins.push({id:newId, name, dose});
+    if(pendingPhoto){ photos[newId]=pendingPhoto; savePhotos(); }
+  }
+
+  save(); closeSheet('add-sup-overlay'); renderToday();
+  if(activeTab==='supplements') renderMgmt();
+});
+
+// ═══════════════════════════════════════════════════
+//  LOG SYMPTOM SHEET
+// ═══════════════════════════════════════════════════
+document.getElementById('sym-cancel').addEventListener('click',()=>closeSheet('add-sym-overlay'));
+document.getElementById('sym-confirm').addEventListener('click',()=>{
+  const text=(document.getElementById('sym-note-input').value||'').trim(); if(!text) return;
+  D.symptoms.unshift({id:'s'+Date.now(), ts:Date.now(), note:text});
+  save(); document.getElementById('sym-note-input').value='';
+  closeSheet('add-sym-overlay'); switchTab('symptoms'); renderSymptoms();
+});
+
+// ═══════════════════════════════════════════════════
+//  SHEET HELPERS
+// ═══════════════════════════════════════════════════
+function openSheet(id){
+  document.getElementById(id).classList.add('open');
+  const inp=document.querySelector(`#${id} input:not([type="file"]), #${id} textarea`);
+  if(inp) setTimeout(()=>inp.focus(),350);
+}
+function closeSheet(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click',e=>{ if(e.target===ov) closeSheet(ov.id); });
+});
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+function el(tag,cls){ const e=document.createElement(tag); if(cls) e.className=cls; return e; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Prevent double-tap zoom iOS
+let lt=0;
+document.addEventListener('touchend',e=>{ const n=Date.now(); if(n-lt<300) e.preventDefault(); lt=n; },{passive:false});
+
+// ═══════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════
+renderToday();
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
