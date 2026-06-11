@@ -167,7 +167,6 @@
 
     /* ── SECTION BODY ───────────────────────────── */
     .sec-body { overflow: hidden; transition: max-height 0.35s cubic-bezier(.4,0,.2,1); }
-    .sec-body.collapsed { max-height: 0 !important; }
 
     .subsec-label {
       font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -873,7 +872,7 @@ function renderToday(){
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
         </button>
       </div>
-      <div class="sec-body${isOpen?'':' collapsed'}" data-body="${sec.id}"></div>
+      <div class="sec-body" data-body="${sec.id}"></div>
     `;
     root.appendChild(card);
 
@@ -909,9 +908,9 @@ function renderToday(){
     addBtn.dataset.addsec=sec.id;
     body.appendChild(addBtn);
 
-    const h=body.scrollHeight;
-    body.dataset.h=h; // store for expand animation
-    if(!isOpen){ body.style.maxHeight='0px'; } else { body.style.maxHeight=h+'px'; }
+    // Don't measure height here — unreliable before reflow. Just set state.
+    body.style.transition='none';
+    body.style.maxHeight=isOpen?'none':'0px';
   }
 
   updateHeaderDate();
@@ -1079,15 +1078,26 @@ document.getElementById('sections-root').addEventListener('click',e=>{
     const btn=secHead.querySelector('.collapse-btn');
     const body=document.querySelector(`.sec-body[data-body="${id}"]`);
     if(D.collapsed[id]){
-      // Collapsing: capture live height first, then animate to 0
-      body.style.maxHeight=body.scrollHeight+'px';
+      // Collapsing: snapshot offsetHeight (actual visible height), then animate to 0
+      const liveH=body.offsetHeight;
+      body.style.transition='none';
+      body.style.maxHeight=liveH+'px';
+      body.getBoundingClientRect(); // force reflow so browser registers the px value
+      body.style.transition='';
       requestAnimationFrame(()=>{ body.style.maxHeight='0px'; });
       btn.classList.remove('open');
     } else {
-      // Expanding: use stored natural height (scrollHeight=0 when collapsed)
-      const targetH=(parseInt(body.dataset.h)||900)+'px';
-      body.style.maxHeight=targetH;
-      body.addEventListener('transitionend',()=>{ if(!D.collapsed[id]) body.style.maxHeight='none'; },{once:true});
+      // Expanding: measure real height at click time (never at render time)
+      body.style.transition='none';
+      body.style.maxHeight='none';
+      const h=body.scrollHeight;
+      body.style.maxHeight='0px';
+      body.getBoundingClientRect(); // force reflow
+      body.style.transition='';
+      requestAnimationFrame(()=>{
+        body.style.maxHeight=h+'px';
+        body.addEventListener('transitionend',()=>{ if(!D.collapsed[id]) body.style.maxHeight='none'; },{once:true});
+      });
       btn.classList.add('open');
     }
     return;
