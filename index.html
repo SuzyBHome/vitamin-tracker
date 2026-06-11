@@ -910,6 +910,7 @@ function renderToday(){
     body.appendChild(addBtn);
 
     const h=body.scrollHeight;
+    body.dataset.h=h; // store for expand animation
     if(!isOpen){ body.style.maxHeight='0px'; } else { body.style.maxHeight=h+'px'; }
   }
 
@@ -1078,11 +1079,14 @@ document.getElementById('sections-root').addEventListener('click',e=>{
     const btn=secHead.querySelector('.collapse-btn');
     const body=document.querySelector(`.sec-body[data-body="${id}"]`);
     if(D.collapsed[id]){
+      // Collapsing: capture live height first, then animate to 0
       body.style.maxHeight=body.scrollHeight+'px';
       requestAnimationFrame(()=>{ body.style.maxHeight='0px'; });
       btn.classList.remove('open');
     } else {
-      body.style.maxHeight=body.scrollHeight+'px';
+      // Expanding: use stored natural height (scrollHeight=0 when collapsed)
+      const targetH=(parseInt(body.dataset.h)||900)+'px';
+      body.style.maxHeight=targetH;
       body.addEventListener('transitionend',()=>{ if(!D.collapsed[id]) body.style.maxHeight='none'; },{once:true});
       btn.classList.add('open');
     }
