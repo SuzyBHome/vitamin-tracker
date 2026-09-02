@@ -655,7 +655,7 @@
         </div>
         <div class="field">
           <label>Dose / Brand (optional)</label>
-          <input type="text" id="inp-dose" placeholder="e.g. 1000mg or BioCeuticals" autocomplete="off">
+          <input type="text" id="inp-dose" placeholder="e.g. 1 tablet" autocomplete="off">
         </div>
         <div class="field">
           <label>Section</label>
@@ -702,19 +702,8 @@ const DEFAULTS = {
       id:'morning', label:'Morning', subtitle:'Kickstart your day',
       emoji:'☀️', cls:'morning',
       subsections:[
-        { id:'empty-stomach', label:'Empty Stomach', vitamins:[
-          { id:'v1', name:'Glutathione', dose:'BioCeuticals' },
-          { id:'v2', name:'Iodine Spray', dose:'250 mcg' },
-        ]},
-        { id:'morning-drink', label:'Morning Drink', vitamins:[
-          { id:'v3', name:'Muscleze Energy', dose:'' },
-          { id:'v4', name:'Pure TMG', dose:'' },
-        ]},
         { id:'with-breakfast', label:'With Breakfast', vitamins:[
-          { id:'v5', name:'MethylB', dose:'' },
-          { id:'v6', name:'Quercetin', dose:'' },
-          { id:'v7', name:'Lopotropic', dose:'' },
-          { id:'v8', name:'Milk Thistle', dose:'' },
+          { id:'example-morning', name:'Morning supplement', dose:'Example' },
         ]},
       ]
     },
@@ -723,8 +712,7 @@ const DEFAULTS = {
       emoji:'🥗', cls:'lunch',
       subsections:[
         { id:'with-lunch', label:'With Lunch', vitamins:[
-          { id:'v9',  name:'Vitamin D3', dose:'10,000 IU' },
-          { id:'v10', name:'Fish Oil', dose:'' },
+          { id:'example-lunch', name:'Lunch supplement', dose:'Example' },
         ]},
       ]
     },
@@ -733,8 +721,7 @@ const DEFAULTS = {
       emoji:'🍽️', cls:'dinner',
       subsections:[
         { id:'with-dinner', label:'With Dinner', vitamins:[
-          { id:'v11', name:'PEA', dose:'' },
-          { id:'v12', name:'C-D-Glucarate', dose:'' },
+          { id:'example-dinner', name:'Dinner supplement', dose:'Example' },
         ]},
       ]
     },
@@ -743,8 +730,6 @@ const DEFAULTS = {
       emoji:'🌙', cls:'bedtime',
       subsections:[
         { id:'before-sleep', label:'Before Sleep', vitamins:[
-          { id:'v13', name:'Magnesium Glycinate', dose:'' },
-          { id:'v15', name:'MethylB12', dose:'Chewable' },
         ]},
       ]
     },
@@ -757,7 +742,10 @@ const DEFAULTS = {
 // ═══════════════════════════════════════════════════
 //  STORAGE
 // ═══════════════════════════════════════════════════
-const KEY = 'supp-tracker-v2';
+// New key prevents data from an earlier, personal deployment being restored.
+const KEY = 'supp-tracker-v3';
+localStorage.removeItem('supp-tracker-v2');
+localStorage.removeItem('supp-photos-v1');
 let D = (() => {
   try {
     const raw = localStorage.getItem(KEY);
@@ -1196,7 +1184,7 @@ document.getElementById('fab-add-sym').addEventListener('click',()=>{ toggleFabM
 // ═══════════════════════════════════════════════════
 //  PHOTO STORAGE
 // ═══════════════════════════════════════════════════
-const PHOTO_KEY='supp-photos-v1';
+const PHOTO_KEY='supp-photos-v2';
 let photos=(()=>{ try{ return JSON.parse(localStorage.getItem(PHOTO_KEY)||'{}'); }catch(_){ return {}; } })();
 function savePhotos(){ localStorage.setItem(PHOTO_KEY,JSON.stringify(photos)); }
 

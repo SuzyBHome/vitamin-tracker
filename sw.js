@@ -1,4 +1,4 @@
-const CACHE = 'vitamins-v2';
+const CACHE = 'vitamins-v3';
 const ASSETS = ['./index.html', './manifest.json', './BeeTeamVitaminLogo.png'];
 
 self.addEventListener('install', e => {
